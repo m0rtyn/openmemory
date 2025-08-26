@@ -135,13 +135,20 @@ def reset_memory_client():
 
 def get_default_memory_config():
     """Get default memory client configuration with sensible defaults."""
+    # Allow overriding Qdrant host/port via environment (for managed or external Qdrant service)
+    qdrant_host = os.environ.get("QDRANT_HOST", "mem0_store")
+    try:
+        qdrant_port = int(os.environ.get("QDRANT_PORT", "6333"))
+    except ValueError:
+        qdrant_port = 6333
+
     return {
         "vector_store": {
             "provider": "qdrant",
             "config": {
                 "collection_name": "openmemory",
-                "host": "mem0_store",
-                "port": 6333,
+                "host": qdrant_host,
+                "port": qdrant_port,
             }
         },
         "llm": {

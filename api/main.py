@@ -9,6 +9,9 @@ from app.routers import apps_router, config_router, memories_router, stats_route
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
+import os
+import socket
+from contextlib import closing
 
 app = FastAPI(title="OpenMemory API")
 
@@ -86,3 +89,31 @@ app.include_router(config_router)
 
 # Add pagination support
 add_pagination(app)
+
+
+@app.get("/health", tags=["system"])  # Lightweight health endpoint
+def health():
+    """Basic health check.
+
+    Returns OK plus optional checks:
+    - database connectivity (simple session open)
+    - qdrant TCP reachability if QDRANT_HOST/PORT set
+    """
+    status = {"status": "ok"}
+    # DB check
+    try:
+        db = SessionLocal(); db.execute("SELECT 1"); db.close()
+        status["database"] = "ok"
+    except Exception as e:
+        status["database"] = f"error: {e}"; status["status"] = "degraded"
+
+    # Qdrant reachability (shallow TCP check)
+    host = os.environ.get("QDRANT_HOST")
+    port = os.environ.get("QDRANT_PORT") or ""
+    if host and port:
+        try:
+            with closing(socket.create_connection((host, int(port)), timeout=1.5)):
+                status["qdrant"] = "ok"
+        except Exception as e:
+            status["qdrant"] = f"unreachable: {e}"; status["status"] = "degraded"
+    return status

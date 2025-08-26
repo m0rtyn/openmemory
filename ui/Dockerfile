@@ -1,7 +1,7 @@
 # syntax=docker.io/docker/dockerfile:1
 
 # Base stage for common setup
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies for pnpm
 RUN apk add --no-cache libc6-compat curl && \
@@ -11,9 +11,8 @@ RUN apk add --no-cache libc6-compat curl && \
 WORKDIR /app
 
 FROM base AS deps
-
 COPY package.json pnpm-lock.yaml ./
-
+# Install all deps (will be pruned later)
 RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
@@ -23,14 +22,22 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY . .
 
-RUN cp next.config.dev.mjs next.config.mjs
-RUN cp .env.example .env
-RUN pnpm build
+ARG NEXT_PUBLIC_API_URL="http://localhost:8765"
+ARG NEXT_PUBLIC_USER_ID="user"
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_USER_ID=$NEXT_PUBLIC_USER_ID
+
+RUN cp next.config.dev.mjs next.config.mjs \
+ && cp .env.example .env \
+ && echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" >> .env \
+ && echo "NEXT_PUBLIC_USER_ID=$NEXT_PUBLIC_USER_ID" >> .env \
+ && pnpm build
 
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
@@ -45,8 +52,10 @@ RUN chmod +x /home/nextjs/entrypoint.sh
 USER nextjs
 
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000 \
+    HOSTNAME="0.0.0.0"
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD wget -q -O - http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
 
 ENTRYPOINT ["/home/nextjs/entrypoint.sh"]
 CMD ["node", "server.js"]
