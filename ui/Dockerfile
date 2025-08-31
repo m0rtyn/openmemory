@@ -16,11 +16,15 @@ ENV NODE_ENV=production \
 
 RUN if [ -f .env.example ]; then cp .env.example .env; fi && \
     echo "(placeholders) NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" && \
-    pnpm build
+    pnpm build && \
+    ls -1 .next/standalone || (echo 'standalone output missing'; exit 1)
 
 EXPOSE 3000
 ENV PORT=3000 HOSTNAME="0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD wget -q -O - http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
 
-CMD ["pnpm", "start"]
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", ".next/standalone/server.js"]
