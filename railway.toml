@@ -4,9 +4,7 @@ builder = "nixpacks"
 buildCommand = "pip install -r api/requirements.txt"
 
 [deploy]
-# Run migrations before starting (optional). We point Alembic at its ini explicitly to avoid relying on `cd api`.
-preDeployCommand = ["alembic -c api/alembic.ini upgrade head"]
-# Start the app via module path (api is now a package with __init__.py). No need to cd.
+# Removed preDeploy migrations (Base.metadata.create_all covers initial table creation). Re-add later if full Alembic needed.
 startCommand = "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/"
 healthcheckTimeout = 100
