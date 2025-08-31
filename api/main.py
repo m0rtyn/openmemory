@@ -1,4 +1,5 @@
 import datetime
+import logging
 from uuid import uuid4
 
 from app.config import DEFAULT_APP_ID, USER_ID
@@ -12,6 +13,9 @@ from fastapi_pagination import add_pagination
 import os
 import socket
 from contextlib import closing
+
+logging.basicConfig(level=logging.INFO)
+logging.info("Starting application module import (api.main)...")
 
 app = FastAPI(title="OpenMemory API")
 
@@ -89,6 +93,25 @@ app.include_router(config_router)
 
 # Add pagination support
 add_pagination(app)
+
+# Basic root & health endpoints for platform health checks
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "openmemory", "version": "1"}
+
+@app.get("/healthz")
+def healthz():
+    # Potential extension: check DB connectivity
+    try:
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        db.close()
+        db_ok = True
+    except Exception:
+        db_ok = False
+    return {"ok": True, "db": db_ok}
+
+logging.info("Application startup wiring complete (api.main).")
 
 
 @app.get("/health", tags=["system"])  # Lightweight health endpoint
