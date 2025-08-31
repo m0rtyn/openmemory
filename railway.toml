@@ -4,9 +4,9 @@ builder = "nixpacks"
 buildCommand = "pip install -r api/requirements.txt"
 
 [deploy]
-# Run migrations before starting (optional). Comment out if not needed.
-preDeployCommand = ["sh -c 'cd api && alembic upgrade head'"]
-# Point uvicorn at the api.main module (main.py lives inside api/)
+# Run migrations before starting (optional). We point Alembic at its ini explicitly to avoid relying on `cd api`.
+preDeployCommand = ["alembic -c api/alembic.ini upgrade head"]
+# Start the app via module path (api is now a package with __init__.py). No need to cd.
 startCommand = "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/"
 healthcheckTimeout = 100
