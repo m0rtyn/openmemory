@@ -9,14 +9,13 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-ENV NEXT_PUBLIC_API_URL="http://localhost:8765" \
-    NEXT_PUBLIC_USER_ID="user" \
-    NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__ \
+    NEXT_PUBLIC_USER_ID=__NEXT_PUBLIC_USER_ID__
 
 RUN if [ -f .env.example ]; then cp .env.example .env; fi && \
-    echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" >> .env && \
-    echo "NEXT_PUBLIC_USER_ID=$NEXT_PUBLIC_USER_ID" >> .env && \
+    echo "(placeholders) NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" && \
     pnpm build
 
 EXPOSE 3000

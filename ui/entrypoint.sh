@@ -6,14 +6,17 @@ cd /app
 
 
 
-# Replace env variable placeholders with real values
-printenv | grep NEXT_PUBLIC_ | while read -r line ; do
-  key=$(echo $line | cut -d "=" -f1)
-  value=$(echo $line | cut -d "=" -f2)
-
-  find .next/ -type f -exec sed -i "s|$key|$value|g" {} \;
+# Replace placeholder tokens (__NEXT_PUBLIC_...__) with actual env values
+for var in $(printenv | grep '^NEXT_PUBLIC_' | cut -d '=' -f1); do
+  value=$(printenv $var | sed 's|/|\\/|g')
+  token="__${var}__"
+  echo "Injecting $var into build (token $token)"
+  # Only replace if token present (silent otherwise)
+  grep -R --null -l "$token" .next 2>/dev/null | while IFS= read -r -d '' file; do
+    sed -i "s|$token|$value|g" "$file"
+  done || true
 done
-echo "Done replacing env variables NEXT_PUBLIC_ with real values"
+echo "Runtime public env injection complete"
 
 
 # Execute the container's main process (CMD in Dockerfile)
