@@ -1,11 +1,11 @@
 [build]
 # Use Nixpacks Python builder and explicitly install backend dependencies
 builder = "nixpacks"
-buildCommand = "pip install -r api/requirements.txt"
+buildCommand = "cd api && pip install -r requirements.txt"
 
 [deploy]
 # Removed preDeploy migrations (Base.metadata.create_all covers initial table creation). Re-add later if full Alembic needed.
-startCommand = "sh -c 'uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
+startCommand = "sh run_api.sh"
 healthcheckPath = "/healthz"
 healthcheckTimeout = 100
 restartPolicyType = "never"

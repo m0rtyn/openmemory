@@ -21,6 +21,7 @@ help:
 	@echo "  make ui-start  - Start the frontend development server"
 	@echo "  make ui-dev    - Install dependencies and start the frontend in dev mode"
 	@echo "  make ui        - Install dependencies and start the frontend in production mode"
+	@echo "  make chmod-run - Make run_api.sh executable"
 
 env:
 	cd api && cp .env.example .env
@@ -127,3 +128,6 @@ qdrant-restore:
 
 ui-dev:
 	cd ui && NEXT_PUBLIC_USER_ID=$(USER) NEXT_PUBLIC_API_URL=$(NEXT_PUBLIC_API_URL) pnpm install && pnpm dev
+
+chmod-run:
+	chmod +x run_api.sh
