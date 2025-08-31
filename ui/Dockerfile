@@ -3,10 +3,9 @@
 # Base stage for common setup
 FROM node:20-alpine AS base
 
-# Install dependencies for pnpm
-RUN apk add --no-cache libc6-compat curl && \
-    corepack enable && \
-    corepack prepare pnpm@latest --activate
+# Install system deps and pnpm globally (avoid interactive corepack download prompt)
+RUN apk add --no-cache libc6-compat curl bash && \
+    npm install -g pnpm@10.5.2
 
 WORKDIR /app
 
@@ -24,15 +23,15 @@ COPY . .
 
 ARG NEXT_PUBLIC_API_URL="http://localhost:8765"
 ARG NEXT_PUBLIC_USER_ID="user"
-ARG FORCE_REBUILD=0  # change or pass --build-arg to bust cache
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_USER_ID=$NEXT_PUBLIC_USER_ID
 
 RUN if [ -f .env.example ]; then cp .env.example .env; fi \
  && echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" >> .env \
  && echo "NEXT_PUBLIC_USER_ID=$NEXT_PUBLIC_USER_ID" >> .env \
- && echo "Building standalone at $(date -u) (force=$FORCE_REBUILD)" \
- && pnpm build
+ && echo "Building standalone at $(date -u)" \
+ && pnpm build \
+ && pnpm store prune || true
 
 FROM base AS runner
 WORKDIR /app
