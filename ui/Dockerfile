@@ -24,18 +24,14 @@ COPY . .
 
 ARG NEXT_PUBLIC_API_URL="http://localhost:8765"
 ARG NEXT_PUBLIC_USER_ID="user"
+ARG FORCE_REBUILD=0  # change or pass --build-arg to bust cache
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_USER_ID=$NEXT_PUBLIC_USER_ID
 
-# Bust cache intentionally when source changes
-ARG BUILD_TS
-
-# Ensure next.config.mjs exists (fallback to dev variant if present) then build standalone output
-RUN if [ -f next.config.dev.mjs ]; then cp next.config.dev.mjs next.config.mjs; fi \
- && if [ -f .env.example ]; then cp .env.example .env; fi \
+RUN if [ -f .env.example ]; then cp .env.example .env; fi \
  && echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" >> .env \
  && echo "NEXT_PUBLIC_USER_ID=$NEXT_PUBLIC_USER_ID" >> .env \
- && echo "Building at $(date -u)" \
+ && echo "Building standalone at $(date -u) (force=$FORCE_REBUILD)" \
  && pnpm build
 
 FROM base AS runner
