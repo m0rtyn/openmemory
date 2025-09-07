@@ -9,13 +9,14 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_USER_ID
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__ \
-    NEXT_PUBLIC_USER_ID=__NEXT_PUBLIC_USER_ID__
+    NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+    NEXT_PUBLIC_USER_ID=${NEXT_PUBLIC_USER_ID}
 
 RUN if [ -f .env.example ]; then cp .env.example .env; fi && \
-    echo "(placeholders) NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" && \
     pnpm build && \
     ls -1 .next/standalone || (echo 'standalone output missing'; exit 1) && \
     # Flatten standalone output to the app root so server.js resolves .next/static correctly
@@ -24,9 +25,6 @@ RUN if [ -f .env.example ]; then cp .env.example .env; fi && \
 EXPOSE 3000
 ENV PORT=3000 HOSTNAME="0.0.0.0"
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD wget -q -O - http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD curl -fsS http://127.0.0.1:3000/ >/dev/null || exit 1
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "server.js"]
