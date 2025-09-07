@@ -17,7 +17,9 @@ ENV NODE_ENV=production \
 RUN if [ -f .env.example ]; then cp .env.example .env; fi && \
     echo "(placeholders) NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" && \
     pnpm build && \
-    ls -1 .next/standalone || (echo 'standalone output missing'; exit 1)
+    ls -1 .next/standalone || (echo 'standalone output missing'; exit 1) && \
+    # Flatten standalone output to the app root so server.js resolves .next/static correctly
+    cp -R .next/standalone/* ./
 
 EXPOSE 3000
 ENV PORT=3000 HOSTNAME="0.0.0.0"
@@ -27,4 +29,4 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD wget -q -O - http://127.
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["node", ".next/standalone/server.js"]
+CMD ["node", "server.js"]
